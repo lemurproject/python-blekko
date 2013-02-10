@@ -131,14 +131,14 @@ class Blekko(object):
         """Takes a list of queries and sequentially queries blekko for results"""
         result_sets = []
         for query in queries:
-
+            page_no = 0
             while True:
-                page_no = 0
                 result_set = self.query(terms=query, page=page_no)
 
                 if _end_of_results(result_obj):
                     break
                 result_sets.extend(result_set)
+                page_no += 1
 
         return result_sets
 
