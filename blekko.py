@@ -119,7 +119,7 @@ class Blekko(object):
     def query(self, terms, page=0):
         """Perform a search and return a ResultSet object."""
         data = self._request('/ws/', {
-            'q': terms + ' /json',
+            'q': terms + '/ps=100 /json',
             'p': str(page),
         })
         return ResultSet(json.loads(data))
