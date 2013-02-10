@@ -35,6 +35,9 @@ class BlekkoError(Exception):
 class ServerError(BlekkoError):
     """Raised when the server denies a request for some reason."""
 
+class NoResultsError(BlekkoError):
+    """Raised when no more results are available"""
+
 @_rate_limit
 def _http_request(url):
     """Make a (rate-limited) request to the Blekko server and return the
@@ -77,6 +80,9 @@ class ResultSet(ResponseObject):
     universal_total_results.
     """
     def __iter__(self):
+        if not self.data.has_key('RESULT'):
+            raise NoResultsError('There are no results on this page')
+
         for result in self.data['RESULT']:
             yield Result(result)
 
@@ -127,18 +133,26 @@ class Blekko(object):
         })
         return json.loads(data)
 
+    def fetch_all_results(self, terms):
+        """
+        Goes through all pages and fetches results
+        """
+        cur_page_no = 0
+        result_set = []
+        while True:
+            try:
+                result_set.extend([result for result in self.query(terms=terms, page=cur_page_no)])
+                cur_page_no += 1
+
+            except NoResultsError:
+                return result_set
+
     def batch_query(self, queries):
         """Takes a list of queries and sequentially queries blekko for results"""
-        result_sets = []
+        
+        result_set = []
         for query in queries:
-            page_no = 0
-            while True:
-                result_set = self.query(terms=query, page=page_no)
+            result_set.extend(self.fetch_all_results(query))
 
-                if _end_of_results(result_obj):
-                    break
-                result_sets.extend(result_set)
-                page_no += 1
-
-        return result_sets
+        return result_set
 
